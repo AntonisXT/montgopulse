@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import ClientProviders from "@/components/layout/ClientProviders";
+import { PortfolioProvider } from "@/context/PortfolioContext";
 
 export const metadata: Metadata = {
     title: "MontgoPulse — Predictive Urban Intelligence",
@@ -19,10 +20,12 @@ export default function RootLayout({
         <html lang="en" className="dark">
             <body className="min-h-screen bg-surface antialiased">
                 <ClientProviders>
-                    <Sidebar />
-                    <main className="ml-0 md:ml-[260px] min-h-screen transition-all duration-300">
-                        {children}
-                    </main>
+                    <PortfolioProvider>
+                        <Sidebar />
+                        <main className="ml-0 md:ml-[260px] min-h-screen transition-all duration-300">
+                            {children}
+                        </main>
+                    </PortfolioProvider>
                 </ClientProviders>
             </body>
         </html>

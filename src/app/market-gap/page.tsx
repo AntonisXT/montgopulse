@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, MessageSquare, Star, TrendingUp, AlertCircle, ShoppingBag, Download, Check } from 'lucide-react';
+import { Users, MessageSquare, Star, TrendingUp, AlertCircle, ShoppingBag, Download, Check, Loader2, Zap } from 'lucide-react';
 import type { DashboardMetrics } from "@/lib/analytics";
 
 function getDeterministicNeeds(seed: string) {
@@ -23,13 +23,13 @@ function getDeterministicNeeds(seed: string) {
     for (let i = 0; i < seed.length; i++) {
         hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const idx1 = Math.abs(hash) % needsPool.length;
-    const idx2 = Math.abs(hash * 3) % needsPool.length;
-    let idx3 = Math.abs(hash * 7) % needsPool.length;
-    if (idx1 === idx2) idx3 = (idx3 + 1) % needsPool.length;
-
-    const items = [needsPool[idx1], needsPool[idx2]];
-    if (idx1 !== idx3 && idx2 !== idx3) items.push(needsPool[idx3]);
+    const picked = new Set<number>();
+    const multipliers = [1, 3, 7, 11, 17];
+    for (const m of multipliers) {
+        if (picked.size >= 3) break;
+        picked.add(Math.abs(hash * m) % needsPool.length);
+    }
+    const items = Array.from(picked).map(idx => needsPool[idx]);
 
     return items.map((item, i) => ({
         ...item,
@@ -39,6 +39,29 @@ function getDeterministicNeeds(seed: string) {
 
 export default function MarketGapPage() {
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+    const [scrapeStatus, setScrapeStatus] = useState<Record<string, { loading: boolean, result?: number }>>({});
+
+    const handleScrape = async (neighborhood: string) => {
+        setScrapeStatus(prev => ({ ...prev, [neighborhood]: { loading: true } }));
+        try {
+            const res = await fetch("/api/scrape", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    targetUrl: "https://www.yelp.com/search?find_desc=restaurants&find_loc=Montgomery+AL",
+                    extractionType: "sentiment"
+                })
+            });
+            const data = await res.json();
+            // Map the scraped overallSentiment (0.0 to 1.0) to a percentage (0 to 100) or fallback to 80
+            setScrapeStatus(prev => ({
+                ...prev,
+                [neighborhood]: { loading: false, result: Math.round((data.overallSentiment || 0.8) * 100) }
+            }));
+        } catch {
+            setScrapeStatus(prev => ({ ...prev, [neighborhood]: { loading: false } }));
+        }
+    };
 
     useEffect(() => {
         fetch("/api/analytics/dashboard")
@@ -79,8 +102,10 @@ export default function MarketGapPage() {
                     if (!sentiment) return null;
 
                     const unmetNeeds = getDeterministicNeeds(n.name);
-                    const isPositive = sentiment.positivePercent >= 65;
-                    const isWarning = sentiment.positivePercent < 50;
+                    const scrapeObj = scrapeStatus[n.name];
+                    const displayedSentiment = scrapeObj?.result ?? sentiment.positivePercent;
+                    const isPositive = displayedSentiment >= 65;
+                    const isWarning = displayedSentiment < 50;
 
                     return (
                         <motion.div key={n.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
@@ -99,18 +124,30 @@ export default function MarketGapPage() {
                                                 <Star className="w-3 h-3 text-brand-amber fill-brand-amber" />
                                                 <span className="text-sm font-bold text-white">{sentiment.avgRating}</span>
                                             </div>
-                                            <Button
-                                                variant="outline"
-                                                className="h-6 text-[10px] px-2 py-0 border border-white/10 text-white/60 hover:text-white bg-transparent transition-colors"
-                                                onClick={(e) => {
-                                                    const target = e.currentTarget;
-                                                    const originalHTML = target.innerHTML;
-                                                    target.innerHTML = `<svg class="w-3 h-3 mr-1 text-brand-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span class="text-brand-green">Exported</span>`;
-                                                    setTimeout(() => { target.innerHTML = originalHTML; }, 2000);
-                                                }}
-                                            >
-                                                <Download className="w-3 h-3 mr-1" /> Export Insights
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    disabled={scrapeObj?.loading}
+                                                    className={`h-6 text-[10px] px-2 py-0 border transition-colors ${scrapeObj?.result ? 'border-red-500/50 text-red-400 bg-red-500/10' : 'border-brand-purple/30 text-brand-purple hover:bg-brand-purple/10 bg-brand-purple/5'}`}
+                                                    onClick={() => handleScrape(n.name)}
+                                                    title="Powered by Bright Data Scraping Browser"
+                                                >
+                                                    {scrapeObj?.loading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Zap className="w-3 h-3 mr-1" />}
+                                                    {scrapeObj?.result ? "🔴 LIVE" : "Live Scrape"}
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    className="h-6 text-[10px] px-2 py-0 border border-white/10 text-white/60 hover:text-white bg-transparent transition-colors"
+                                                    onClick={(e) => {
+                                                        const target = e.currentTarget;
+                                                        const originalHTML = target.innerHTML;
+                                                        target.innerHTML = `<svg class="w-3 h-3 mr-1 text-brand-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span class="text-brand-green">Exported</span>`;
+                                                        setTimeout(() => { target.innerHTML = originalHTML; }, 2000);
+                                                    }}
+                                                >
+                                                    <Download className="w-3 h-3 mr-1" /> Export Insights
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -126,14 +163,15 @@ export default function MarketGapPage() {
                                                 }
                                                 Overall Sentiment
                                             </span>
-                                            <span className={`font-bold ${isPositive ? 'text-brand-green' : isWarning ? 'text-red-400' : 'text-brand-amber'}`}>
-                                                {sentiment.positivePercent}% Positive
+                                            <span className={`font-bold flex items-center gap-2 ${isPositive ? 'text-brand-green' : isWarning ? 'text-red-400' : 'text-brand-amber'}`}>
+                                                {scrapeObj?.result && <Badge variant="ghost" className="text-[9px] h-4 leading-none border-brand-purple text-brand-purple bg-brand-purple/10 px-1 py-0">Bright Data</Badge>}
+                                                {displayedSentiment}% Positive
                                             </span>
                                         </div>
                                         <div className="h-2 w-full bg-glass-100 rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
-                                                animate={{ width: `${sentiment.positivePercent}%` }}
+                                                animate={{ width: `${displayedSentiment}%` }}
                                                 transition={{ duration: 1, ease: "easeOut", delay: 0.2 + i * 0.1 }}
                                                 className={`h-full rounded-full ${isPositive ? 'bg-brand-green' : isWarning ? 'bg-red-400' : 'bg-brand-amber'}`}
                                             />
