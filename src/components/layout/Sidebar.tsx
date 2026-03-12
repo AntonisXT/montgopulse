@@ -18,19 +18,28 @@ import {
     Menu,
     X,
     Target,
-    GitCompare,
+    Swords,
     Users,
+    Briefcase,
+    Settings,
+    Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-    { href: "/dashboard", label: "Strategic Forecasting Hub", icon: BrainCircuit },
-    { href: "/map", label: "Interactive Investment Map", icon: Map },
-    { href: "/compare", label: "District Battle", icon: GitCompare },
-    { href: "/simulator", label: "AI Investment Simulator", icon: Target },
+    { href: "/map", label: "Spatial Explorer", icon: Map },
+    { href: "/analytics", label: "Market Analytics", icon: Activity },
+    { href: "/predictions", label: "Predictive Insights", icon: BrainCircuit },
+    { href: "/compare", label: "District Battle", icon: Swords },
+    { href: "/simulator", label: "Investment Simulator", icon: Calculator },
     { href: "/market-gap", label: "Citizen Pulse & Demand", icon: Users },
-    { href: "/alerts", label: "Pulse Triggers", icon: Bell },
-    { href: "/reports", label: "Dynamic Reports", icon: FileText },
+    { href: "/alerts", label: "Pulse Triggers", icon: Zap },
+    { href: "/reports", label: "Dynamic Report Builder", icon: FileText },
+];
+
+const workspaceItems = [
+    { href: "/portfolio", label: "My Portfolios", icon: Briefcase },
+    { href: "/settings", label: "System Settings", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -67,7 +76,7 @@ export default function Sidebar() {
             </div>
 
             {/* Nav Items */}
-            <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto scrollbar-thin" aria-label="Main navigation">
+            <nav className="flex-1 py-4 px-2 flex flex-col gap-1 overflow-y-auto scrollbar-thin" aria-label="Main navigation">
                 <AnimatePresence>
                     {!collapsed && (
                         <motion.p
@@ -90,19 +99,19 @@ export default function Sidebar() {
                                 className={cn(
                                     "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer",
                                     isActive
-                                        ? "bg-brand-cyan/10 text-brand-cyan"
-                                        : "text-white/50 hover:text-white hover:bg-glass-200"
+                                        ? "bg-white/5"
+                                        : "text-slate-400 hover:text-white hover:bg-white/5"
                                 )}
                                 aria-current={isActive ? "page" : undefined}
                             >
                                 {isActive && (
                                     <motion.div
                                         layoutId="sidebar-active"
-                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-brand-cyan shadow-glow"
+                                        className="absolute left-0 inset-y-0 my-auto w-[3px] h-6 rounded-r-full bg-gradient-to-b from-cyan-400 to-purple-500 shadow-[0_0_8px_rgba(0,240,255,0.4)]"
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
                                 )}
-                                <Icon className={cn("w-5 h-5 shrink-0", isActive && "drop-shadow-[0_0_6px_rgba(0,240,255,0.5)]")} />
+                                <Icon className={cn("w-5 h-5 shrink-0", isActive ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(0,240,255,0.5)]" : "")} />
                                 <AnimatePresence>
                                     {!collapsed && (
                                         <motion.span
@@ -110,7 +119,12 @@ export default function Sidebar() {
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -10 }}
                                             transition={{ duration: 0.15 }}
-                                            className="text-sm font-medium whitespace-nowrap"
+                                            className={cn(
+                                                "text-sm whitespace-nowrap",
+                                                isActive
+                                                    ? "font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500"
+                                                    : "font-medium"
+                                            )}
                                         >
                                             {item.label}
                                         </motion.span>
@@ -120,10 +134,65 @@ export default function Sidebar() {
                         </Link>
                     );
                 })}
+
+                <div className="mt-auto pt-4 flex flex-col gap-1">
+                    <AnimatePresence>
+                        {!collapsed && (
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="section-title px-3 mb-2"
+                            >
+                                Workspace
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
+
+                    {workspaceItems.map((item) => {
+                        const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                        const Icon = item.icon;
+                        return (
+                            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+                                <div
+                                    className={cn(
+                                        "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer",
+                                        isActive
+                                            ? "bg-brand-purple/10 text-brand-purple"
+                                            : "text-white/50 hover:text-white hover:bg-glass-200"
+                                    )}
+                                    aria-current={isActive ? "page" : undefined}
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="sidebar-active"
+                                            className="absolute left-0 inset-y-0 my-auto w-[3px] h-6 rounded-r-full bg-brand-purple shadow-glow-purple"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                    )}
+                                    <Icon className={cn("w-5 h-5 shrink-0", isActive && "drop-shadow-[0_0_6px_rgba(168,85,247,0.5)]")} />
+                                    <AnimatePresence>
+                                        {!collapsed && (
+                                            <motion.span
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -10 }}
+                                                transition={{ duration: 0.15 }}
+                                                className="text-sm font-medium whitespace-nowrap"
+                                            >
+                                                {item.label}
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
             </nav>
 
             {/* Status */}
-            <div className="px-3 pb-3">
+            < div className="px-3 pb-3" >
                 <AnimatePresence>
                     {!collapsed && (
                         <motion.div
@@ -164,7 +233,7 @@ export default function Sidebar() {
                         )}
                     </AnimatePresence>
                 </button>
-            </div>
+            </div >
         </>
     );
 
