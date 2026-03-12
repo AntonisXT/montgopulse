@@ -19,6 +19,17 @@ interface AppState {
     clearSelectedMarker: () => void;
     welcomeDismissed: boolean;
     dismissWelcome: () => void;
+    metrics: import("@/lib/analytics").DashboardMetrics | null;
+    selectedZone: string;
+    setSelectedZone: (zone: string) => void;
+    simulationHandOff: {
+        profile: string;
+        zoneName: string;
+        score: number;
+        gapStatus: string;
+        sentiment: number;
+    } | null;
+    dispatchSimulationToAI: (data: { profile: string; zoneName: string; score: number; gapStatus: string; sentiment: number }) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -29,15 +40,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // IMPORTANT: Start as `true` (hidden) to avoid hydration mismatch.
     // The useEffect below will set it to `false` (show modal) on first visit.
     const [welcomeDismissed, setWelcomeDismissed] = useState(true);
+    const [metrics, setMetrics] = useState<import("@/lib/analytics").DashboardMetrics | null>(null);
+    const [selectedZone, setSelectedZone] = useState<string>("All Montgomery");
+    const [simulationHandOff, setSimulationHandOff] = useState<AppState["simulationHandOff"]>(null);
 
     // Read localStorage ONLY in useEffect (client-side) to prevent hydration mismatch
     useEffect(() => {
         const dismissed = localStorage.getItem("montgopulse_welcome_dismissed") === "true";
         setWelcomeDismissed(dismissed);
+
+        fetch("/api/analytics/dashboard")
+            .then(res => res.json())
+            .then(data => setMetrics(data))
+            .catch(console.error);
     }, []);
 
     const dispatchMarkerToAI = useCallback((marker: MarkerInsight) => {
         setSelectedMarker(marker);
+        setCopilotOpen(true);
+    }, []);
+
+    const dispatchSimulationToAI = useCallback((data: { profile: string; zoneName: string; score: number; gapStatus: string; sentiment: number }) => {
+        setSimulationHandOff(data);
         setCopilotOpen(true);
     }, []);
 
@@ -60,6 +84,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 clearSelectedMarker,
                 welcomeDismissed,
                 dismissWelcome,
+                metrics,
+                selectedZone,
+                setSelectedZone,
+                simulationHandOff,
+                dispatchSimulationToAI,
             }}
         >
             {children}
