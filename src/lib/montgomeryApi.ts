@@ -94,7 +94,7 @@ async function fetchArcGIS<T>(
 
     try {
         const response = await fetch(url, {
-            next: { revalidate: 300 }, // cache for 5 min
+            cache: 'no-store', // Disable caching for large payloads
         });
 
         if (!response.ok) {

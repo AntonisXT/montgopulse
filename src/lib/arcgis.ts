@@ -119,7 +119,7 @@ async function fetchGeoJSON<T = Record<string, unknown>>(
 ): Promise<GeoJSONFeatureCollection<T>> {
     try {
         const response = await fetch(fullUrl, {
-            next: { revalidate: 300 },
+            cache: 'no-store',
         });
 
         if (!response.ok) {
@@ -166,12 +166,20 @@ export async function fetchBusinessLicenses<T = Record<string, unknown>>(): Prom
     return fetchGeoJSON<T>(url);
 }
 
-export async function fetchVacantProperties<T = Record<string, unknown>>(): Promise<GeoJSONFeatureCollection<T>> {
-    const url = process.env.ARCGIS_VACANT_URL;
+export async function fetchPermits<T = Record<string, unknown>>(): Promise<GeoJSONFeatureCollection<T>> {
+    const url = process.env.ARCGIS_PERMITS_URL;
     if (!url) {
-        console.warn("[ArcGIS] ARCGIS_VACANT_URL not set");
+        console.warn("[ArcGIS] ARCGIS_PERMITS_URL not set");
         return { type: "FeatureCollection", features: [] };
     }
-    // Return exact coordinates from ArcGIS Open Data
+    return fetchGeoJSON<T>(url);
+}
+
+export async function fetchViolations<T = Record<string, unknown>>(): Promise<GeoJSONFeatureCollection<T>> {
+    const url = process.env.ARCGIS_VIOLATIONS_URL;
+    if (!url) {
+        console.warn("[ArcGIS] ARCGIS_VIOLATIONS_URL not set");
+        return { type: "FeatureCollection", features: [] };
+    }
     return fetchGeoJSON<T>(url);
 }
