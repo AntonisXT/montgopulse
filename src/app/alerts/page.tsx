@@ -21,7 +21,7 @@ const DEFAULT_ALERTS: AlertRule[] = [
     {
         id: "default-1",
         name: "Crime Rate Drop Signal",
-        condition: "If 911 Crime Calls drops by 10% near Vacant Properties (within 1 km)",
+        condition: "If 911 Crime Calls drops by 10% near Code Violations (within 1 km)",
         action: "Push Notification + Map Insight",
         status: "Active",
         type: "safety",
@@ -30,7 +30,7 @@ const DEFAULT_ALERTS: AlertRule[] = [
     {
         id: "default-2",
         name: "New Business Revitalization",
-        condition: "If Business Licenses spikes by 15% near Vacant Properties (same neighborhood)",
+        condition: "If Business Licenses spikes by 15% near Construction Permits (same neighborhood)",
         action: "Create Map Insight",
         status: "Active",
         type: "economic",
@@ -92,7 +92,8 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 const DATASET_OPTIONS = [
     { value: "crime", label: "🚨 911 Crime Calls", icon: ShieldAlert },
     { value: "businesses", label: "🟢 Business Licenses", icon: Building2 },
-    { value: "vacant", label: "🟡 Vacant Properties", icon: AlertTriangle },
+    { value: "violations", label: "🟠 Code Violations", icon: AlertTriangle },
+    { value: "permits", label: "🔵 Construction Permits", icon: Building2 },
     { value: "foot_traffic", label: "👣 Foot Traffic Index", icon: Footprints },
     { value: "sentiment", label: "⭐ Review Sentiment", icon: Target },
     { value: "rent", label: "🏠 Median Rent Price", icon: TrendingDown },
@@ -137,7 +138,7 @@ export default function AlertsPage() {
     const [newAlertName, setNewAlertName] = useState("");
     const [datasetA, setDatasetA] = useState("crime");
     const [condition, setCondition] = useState("drops_by_10%");
-    const [datasetB, setDatasetB] = useState("vacant");
+    const [datasetB, setDatasetB] = useState("violations");
     const [radius, setRadius] = useState("1km");
     const [action, setAction] = useState("push");
     const [severity, setSeverity] = useState("high");
@@ -204,9 +205,9 @@ export default function AlertsPage() {
             {/* Quick Preset Buttons */}
             <div className="flex flex-wrap gap-2">
                 {[
-                    { label: "Crime drops > 10%", dataset: "crime", cond: "drops_by_10%", dsB: "vacant" },
+                    { label: "Crime drops > 10%", dataset: "crime", cond: "drops_by_10%", dsB: "violations" },
                     { label: "Foot traffic surges > 15%", dataset: "foot_traffic", cond: "spikes_by_15%", dsB: "businesses" },
-                    { label: "New business within 1km", dataset: "businesses", cond: "new_opening_within", dsB: "vacant" },
+                    { label: "New permit within 1km", dataset: "permits", cond: "new_opening_within", dsB: "businesses" },
                     { label: "Rent crosses 80th pctl", dataset: "rent", cond: "crosses_above_80", dsB: "businesses" },
                 ].map((preset) => (
                     <Button
@@ -353,9 +354,9 @@ export default function AlertsPage() {
                                 <div className="flex items-center justify-between text-xs border-t border-glass-border pt-4">
                                     <span className="text-white/40">Action: <strong className="text-white/80">{alert.action}</strong></span>
                                     <span className={`px-2 py-0.5 rounded ${alert.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                                            alert.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                                                alert.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                    'bg-green-500/20 text-green-400'
+                                        alert.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                                            alert.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                'bg-green-500/20 text-green-400'
                                         } uppercase tracking-wider text-[10px] font-bold`}>
                                         {alert.severity} Priority
                                     </span>

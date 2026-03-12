@@ -43,13 +43,30 @@ const QUICK_PROMPTS = [
     "Show the business landscape",
 ];
 
-const ChartTooltip = ({ active, payload, label }: any) => {
+interface TooltipProps {
+    active?: boolean;
+    payload?: Array<{ color: string; name: string; value: number }>;
+    label?: string;
+}
+
+const ChartTooltip = ({ active, payload, label }: TooltipProps) => {
     if (!active || !payload) return null;
+
+    const formatValue = (name: string, value: number) => {
+        if (name.includes("Inflow") || name.includes("Capital") || name.includes("Velocity") || name.includes("Permits")) {
+            return `$${(value / 1000000).toFixed(1)}M`;
+        }
+        return value;
+    };
+
     return (
-        <div className="glass-strong rounded px-2 py-1 text-[10px]">
-            <p className="text-white/50">{label}</p>
-            {payload.map((p: any, i: number) => (
-                <p key={i} style={{ color: p.color }} className="font-medium">{p.name}: {p.value}</p>
+        <div className="rounded-lg px-3 py-2 text-xs border shadow-xl" style={{ backgroundColor: '#1e293b', borderColor: '#334155' }}>
+            <p style={{ color: '#f8fafc', opacity: 0.7 }} className="mb-1">{label}</p>
+            {payload.map((p, i: number) => (
+                <p key={i} style={{ color: p.color }} className="font-medium flex gap-2 justify-between">
+                    <span>{p.name}:</span>
+                    <span style={{ color: '#f8fafc' }}>{formatValue(p.name, p.value)}</span>
+                </p>
             ))}
         </div>
     );
@@ -70,7 +87,7 @@ function InlineChart({ chart }: { chart: ChartData }) {
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey={chart.xKey} stroke="rgba(255,255,255,0.2)" fontSize={9} />
                         <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} />
-                        <Tooltip content={<ChartTooltip />} />
+                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.1)' }} content={<ChartTooltip />} />
                         <Bar dataKey={chart.dataKey} fill={color} radius={[3, 3, 0, 0]} opacity={0.8} />
                     </BarChart>
                 ) : chart.type === "line" ? (
@@ -78,7 +95,7 @@ function InlineChart({ chart }: { chart: ChartData }) {
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey={chart.xKey} stroke="rgba(255,255,255,0.2)" fontSize={9} />
                         <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} />
-                        <Tooltip content={<ChartTooltip />} />
+                        <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }} content={<ChartTooltip />} />
                         <Line type="monotone" dataKey={chart.dataKey} stroke={color} strokeWidth={2} dot={false} />
                     </LineChart>
                 ) : (
@@ -92,7 +109,7 @@ function InlineChart({ chart }: { chart: ChartData }) {
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey={chart.xKey} stroke="rgba(255,255,255,0.2)" fontSize={9} />
                         <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} />
-                        <Tooltip content={<ChartTooltip />} />
+                        <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }} content={<ChartTooltip />} />
                         <Area type="monotone" dataKey={chart.dataKey} stroke={color} fill="url(#copilotGrad)" strokeWidth={2} />
                     </AreaChart>
                 )}
@@ -111,7 +128,7 @@ export default function CopilotPanel({ isOpen, onClose }: CopilotPanelProps) {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const { selectedMarker, clearSelectedMarker } = useAppState();
+    const { selectedMarker, clearSelectedMarker, simulationHandOff } = useAppState();
     const pathname = usePathname();
 
     const dynamicPrompts = pathname === "/compare" ? [
@@ -131,6 +148,17 @@ export default function CopilotPanel({ isOpen, onClose }: CopilotPanelProps) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Auto-greet when a simulation is handed off
+    useEffect(() => {
+        if (simulationHandOff && isOpen) {
+            const simulationMessage = `User simulation for **${simulationHandOff.profile}** in **${simulationHandOff.zoneName}**. Match Score: **${simulationHandOff.score}/10**. Key Gaps: **${simulationHandOff.gapStatus}**. Sentiment: **${simulationHandOff.sentiment}%**. Provide an entry strategy.`;
+            sendMessage(simulationMessage);
+            // We don't clear simulationHandOff here as it's a state, but we could if we added a clear function.
+            // For now, it triggers once when isOpen becomes true if it exists.
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [simulationHandOff, isOpen]);
 
     // Auto-greet when a marker is dispatched from the map
     useEffect(() => {
