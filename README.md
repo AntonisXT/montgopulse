@@ -25,25 +25,26 @@ MontgoPulse is a strategic urban intelligence platform designed to bridge the ga
 * Gemini API Key
 
 ### Installation
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/your-username/montgopulse.git](https://github.com/your-username/montgopulse.git)
-   cd montgopulse
-Install dependencies:
 
-Bash
+**1. Clone the repository**
 
+```bash
+git clone https://github.com/your-username/montgopulse.git
+cd montgopulse
+```
+
+**2. Install dependencies**
+
+```bash
 npm install
-Configure Environment Variables:
-Create a .env.local file based on the .env.example provided:
+```
 
-Bash
+**3. Set up environment variables**
 
+```bash
 cp .env.example .env.local
-Add your API keys and ArcGIS endpoints in the .env.local file.
+```
 
-Run the development server:
+Then open `.env.local` and fill in your API keys and ArcGIS endpoints (see [Environment Variables](#-environment-variables) below).
 
-Bash
-
-npm run dev
+---
